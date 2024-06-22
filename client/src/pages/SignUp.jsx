@@ -1,6 +1,9 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import useSignUp from "../hooks/useSignUp";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { useSignupMutation } from "../slices/authApiSlice";
+import { setCredentials } from "../slices/authSlice";
+import { toast } from "react-toastify";
 
 const SignUp = () => {
   const [userData, setUserData] = useState({
@@ -9,7 +12,18 @@ const SignUp = () => {
     password: "",
   });
 
-  const { loading, signup } = useSignUp();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const [signup, { isLoading }] = useSignupMutation();
+
+  const { userInfo } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (userInfo) {
+      navigate("/");
+    }
+  }, [userInfo, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -18,7 +32,13 @@ const SignUp = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await signup(userData);
+    try {
+      const res = await signup(userData).unwrap();
+      dispatch(setCredentials({ ...res }));
+      navigate("/");
+    } catch (err) {
+      toast.error(err?.data?.message || err.error);
+    }
   };
 
   return (
@@ -66,10 +86,10 @@ const SignUp = () => {
         <div>
           <button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className="w-full mb-3 rounded-xl px-4 py-3 border border-transparent font-medium text-white bg-blue-900 hover:bg-blue-800"
           >
-            {loading ? "Loading..." : "Sign Up"}
+            {isLoading ? "Loading..." : "Sign Up"}
           </button>
         </div>
       </form>

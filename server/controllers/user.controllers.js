@@ -1,57 +1,47 @@
 import User from "../models/user.model.js";
-import bcrypt from "bcryptjs";
+import asyncHandler from "express-async-handler";
 
-export const getProfile = async (req, res) => {
-  try {
-    const userId = req.user._id;
+export const getProfile = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+  const user = await User.findById(userId);
+  if (!user) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  res.status(200).json({
+    _id: user._id,
+    fullName: user.fullName,
+    username: user.username,
+    profilePicture: user.profilePicture,
+  });
+});
+
+export const updateProfile = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const { fullName, username, password, profilePicture } = req.body;
+
+  const user = await User.findById(userId);
+  if (user) {
+    user.fullName = fullName || user.fullName;
+    user.username = username || user.username;
+    user.profilePicture = profilePicture || user.profilePicture;
+
+    if (password) {
+      user.password = password;
     }
+
+    const updatedUser = await user.save();
 
     res.status(200).json({
-      _id: user._id,
-      fullName: user.fullName,
-      username: user.username,
-      profilePicture: user.profilePicture,
+      _id: updatedUser._id,
+      fullName: updatedUser.fullName,
+      username: updatedUser.username,
+      profilePicture: updatedUser.profilePicture,
     });
-  } catch (error) {
-    console.log(`Error in get profile controller: ${error.message}`);
-    res.status(500).json({ message: "Internal Server Error" });
+  } else {
+    res.status(404);
+    throw new Error("User not found");
   }
-};
-
-export const updateProfile = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const { fullName, username, password, profilePicture } = req.body;
-
-    const user = await User.findById(userId);
-    if (user) {
-      user.fullName = fullName || user.fullName;
-      user.username = username || user.username;
-      user.profilePicture = profilePicture || user.profilePicture;
-
-      if (password) {
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        user.password = hashedPassword;
-      }
-
-      const updatedUser = await user.save();
-
-      res.status(200).json({
-        _id: updatedUser._id,
-        fullName: updatedUser.fullName,
-        username: updatedUser.username,
-        profilePicture: updatedUser.profilePicture,
-      });
-    } else {
-      res.status(404).json({ message: "User not found" });
-    }
-  } catch (error) {
-    console.log(`Error in update profile controller: ${error.message}`);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};
+});

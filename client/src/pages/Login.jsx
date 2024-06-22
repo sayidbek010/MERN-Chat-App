@@ -1,6 +1,9 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import useLogin from "../hooks/useLogin";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { useLoginMutation } from "../slices/authApiSlice";
+import { setCredentials } from "../slices/authSlice";
+import { toast } from "react-toastify";
 
 const Login = () => {
   const [userData, setUserData] = useState({
@@ -8,7 +11,18 @@ const Login = () => {
     password: "",
   });
 
-  const { loading, login } = useLogin();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const [login, { isLoading }] = useLoginMutation();
+
+  const { userInfo } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (userInfo) {
+      navigate("/");
+    }
+  }, [userInfo, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -17,7 +31,13 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await login(userData);
+    try {
+      const res = await login(userData).unwrap();
+      dispatch(setCredentials({ ...res }));
+      navigate("/");
+    } catch (err) {
+      toast.error(err?.data?.message || err.error);
+    }
   };
 
   return (
@@ -53,10 +73,10 @@ const Login = () => {
         <div>
           <button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className="w-full mb-3 rounded-xl px-4 py-3 border border-transparent font-medium text-white bg-blue-900 hover:bg-blue-800"
           >
-            {loading ? "Loading..." : "Login"}
+            {isLoading ? "Loading..." : "Login"}
           </button>
         </div>
       </form>

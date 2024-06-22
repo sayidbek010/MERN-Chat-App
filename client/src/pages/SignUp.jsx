@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import useSignUp from "../hooks/useSignUp";
 
 const SignUp = () => {
   const [userData, setUserData] = useState({
@@ -8,6 +9,8 @@ const SignUp = () => {
     password: "",
   });
 
+  const { loading, signup } = useSignUp();
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setUserData({ ...userData, [name]: value });
@@ -15,21 +18,20 @@ const SignUp = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(userData);
+    await signup(userData);
   };
 
   return (
     <div className="h-screen bg-blue-500 flex flex-col items-center justify-center">
-      <h2 className="text-center text-3xl font-extrabold text-white">
+      <h2 className="mb-4 text-center text-3xl font-extrabold text-white">
         Sign Up
       </h2>
-      <form onSubmit={handleSubmit} className="mt-4 w-full max-w-[320px]">
+      <form onSubmit={handleSubmit} className="w-full max-w-[320px]">
         <div>
           <input
             id="fullName"
             name="fullName"
             type="text"
-            autoComplete="name"
             required
             className="appearance-none mb-3 rounded-xl block w-full px-4 py-3 focus:outline-none"
             placeholder="Full Name"
@@ -42,7 +44,6 @@ const SignUp = () => {
             id="username"
             name="username"
             type="text"
-            autoComplete="username"
             required
             className="appearance-none mb-3 rounded-xl block w-full px-4 py-3 focus:outline-none"
             placeholder="Username"
@@ -55,7 +56,6 @@ const SignUp = () => {
             id="password"
             name="password"
             type="password"
-            autoComplete="new-password"
             required
             className="appearance-none mb-3 rounded-xl block w-full px-4 py-3 focus:outline-none"
             placeholder="Password"
@@ -66,9 +66,10 @@ const SignUp = () => {
         <div>
           <button
             type="submit"
+            disabled={loading}
             className="w-full mb-3 rounded-xl px-4 py-3 border border-transparent font-medium text-white bg-blue-900 hover:bg-blue-800"
           >
-            Sign Up
+            {loading ? "Loading..." : "Sign Up"}
           </button>
         </div>
       </form>
